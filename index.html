@@ -135,6 +135,9 @@
       </select>
       <button id="exportPdfBtn" class="btn" title="Download PDF">Export PDF</button>
       <button id="clearAllBtn" class="btn secondary" title="Hapus semua data (localStorage)">Clear All</button>
+
+      <!-- ⭐ TOMBOL LOGOUT BARU -->
+      <button id="logoutBtn" class="btn warn" title="Keluar">Logout</button>
     </div>
   </header>
 
@@ -203,7 +206,7 @@
 let dataKey = "omk_sekonau_v2";
 let data = JSON.parse(localStorage.getItem(dataKey)) || [];
 let editIndex = -1;
-let sortState = {key: null, dir: 1}; // dir: 1 asc, -1 desc
+let sortState = {key: null, dir: 1};
 
 /* ====== DOM ====== */
 const inputNama = document.getElementById('inputNama');
@@ -230,7 +233,6 @@ function isValidURL(str){
   try { new URL(str); return true; } catch(e){ return false; }
 }
 function detectWhatsapp(url){
-  // simple detection: contains wa.me or whatsapp.com or tel:62 or starts with 08 (not full-proof)
   if(!url) return false;
   return /wa\.me|whatsapp\.com|^tel:|^08/.test(url);
 }
@@ -240,7 +242,6 @@ function renderTable(filterText = ''){
   tbody.innerHTML = '';
   let list = data.slice();
 
-  // filter (search in nama, status, keterangan)
   const q = (filterText || '').trim().toLowerCase();
   if(q){
     list = list.filter(item =>
@@ -250,7 +251,6 @@ function renderTable(filterText = ''){
     );
   }
 
-  // sort
   if(sortState.key){
     list.sort((a,b) => {
       const ka = (a[sortState.key]||'').toLowerCase();
@@ -262,30 +262,23 @@ function renderTable(filterText = ''){
   }
 
   list.forEach((item, idx) => {
-    const realIndex = data.indexOf(item); // index in original
+    const realIndex = data.indexOf(item);
     const tr = document.createElement('tr');
 
-    // No
     const tdNo = document.createElement('td'); tdNo.textContent = idx + 1; tr.appendChild(tdNo);
 
-    // Nama
     const tdNama = document.createElement('td'); tdNama.textContent = formatSafe(item.nama); tr.appendChild(tdNama);
 
-    // Status
     const tdStatus = document.createElement('td'); tdStatus.textContent = formatSafe(item.status); tr.appendChild(tdStatus);
 
-    // Keterangan - link
     const tdKeterangan = document.createElement('td');
     const link = document.createElement('a');
     let k = item.keterangan || '';
     if(k && !isValidURL(k)){
-      // if user typed number like 0812..., try to format as wa.me
       if(/^[0+]/.test(k.replace(/\s+/g,''))){
-        // try to build wa.me if looks like number
         const digits = k.replace(/\D/g,'');
         k = 'https://wa.me/' + (digits.startsWith('0') ? ('62'+digits.slice(1)) : digits);
       } else {
-        // fallback: prepend http://
         k = 'http://' + k;
       }
     }
@@ -296,7 +289,6 @@ function renderTable(filterText = ''){
     link.className = 'keterangan-link';
     tdKeterangan.appendChild(link);
 
-    // If it's whatsapp, add copy button
     if(k && detectWhatsapp(k)){
       const space = document.createTextNode(' ');
       tdKeterangan.appendChild(space);
@@ -315,22 +307,21 @@ function renderTable(filterText = ''){
 
     tr.appendChild(tdKeterangan);
 
-    // Aksi
     const tdAksi = document.createElement('td');
     tdAksi.className = 'row-actions';
-    // Edit
+
     const btnEdit = document.createElement('button');
     btnEdit.className = 'chip';
     btnEdit.textContent = 'Edit';
     btnEdit.onclick = () => startEdit(realIndex);
     tdAksi.appendChild(btnEdit);
-    // Duplicate
+
     const btnDup = document.createElement('button');
     btnDup.className = 'chip';
     btnDup.textContent = 'Duplikat';
     btnDup.onclick = () => { data.splice(realIndex+1, 0, {...item}); saveData(); renderTable(globalSearch.value); };
     tdAksi.appendChild(btnDup);
-    // Hapus
+
     const btnHapus = document.createElement('button');
     btnHapus.className = 'chip';
     btnHapus.style.background = 'rgba(255,90,90,0.08)';
@@ -408,7 +399,6 @@ document.querySelectorAll('th.sortable').forEach(th => {
     const key = th.dataset.key;
     if(sortState.key === key) sortState.dir *= -1;
     else { sortState.key = key; sortState.dir = 1; }
-    // update sort indicators
     document.getElementById('sortNama').textContent = sortState.key==='nama' ? (sortState.dir===1?'▲':'▼') : '';
     document.getElementById('sortStatus').textContent = sortState.key==='status' ? (sortState.dir===1?'▲':'▼') : '';
     renderTable(globalSearch.value);
@@ -420,10 +410,8 @@ themeSelector.addEventListener('change', (e) => {
   const cls = e.target.value;
   document.body.classList.remove('theme-blue','theme-gold','theme-red','theme-green','theme-white');
   document.body.classList.add(cls);
-  // save theme
   localStorage.setItem(dataKey + '_theme', cls);
 });
-// load saved theme
 const savedTheme = localStorage.getItem(dataKey + '_theme') || 'theme-blue';
 themeSelector.value = savedTheme;
 document.body.classList.add(savedTheme);
@@ -443,10 +431,9 @@ exportPdfBtn.addEventListener('click', async () => {
   y += 24;
   doc.setFontSize(11);
 
-  // header row
   const headers = ['No','Nama','Status','Keterangan'];
   const colWidths = [40, Math.round(usableW*0.35), Math.round(usableW*0.30), Math.round(usableW*0.33)];
-  // draw header
+
   doc.setFont(undefined, 'bold');
   let x = margin;
   headers.forEach((h, i) => {
@@ -456,7 +443,6 @@ exportPdfBtn.addEventListener('click', async () => {
   doc.setFont(undefined, 'normal');
   y += 14;
 
-  // rows - use filtered view
   const rows = data.slice();
   rows.forEach((r, idx) => {
     x = margin;
@@ -466,14 +452,13 @@ exportPdfBtn.addEventListener('click', async () => {
       r.status || '',
       r.keterangan || ''
     ];
-    // check for page break
+
     const requiredHeight = lineHeight;
     if(y + requiredHeight > doc.internal.pageSize.getHeight() - margin){
       doc.addPage();
       y = margin;
     }
-    // print row (wrap long text)
-    // naive wrapping: split by space to fit width
+
     const maxLines = Math.max(
       doc.splitTextToSize(cells[0], colWidths[0]-4).length,
       doc.splitTextToSize(cells[1], colWidths[1]-4).length,
@@ -482,7 +467,6 @@ exportPdfBtn.addEventListener('click', async () => {
     );
     for(let line=0; line<maxLines; line++){
       x = margin;
-      // each cell's lines
       doc.text(doc.splitTextToSize(cells[0], colWidths[0]-4)[line] || '', x+2, y);
       x += colWidths[0];
       doc.text(doc.splitTextToSize(cells[1], colWidths[1]-4)[line] || '', x+2, y);
@@ -507,6 +491,16 @@ clearAllBtn.addEventListener('click', () => {
     data = [];
     saveData();
     renderTable();
+  }
+});
+
+/* ⭐ ====== LOGOUT BUTTON ====== */
+const logoutBtn = document.getElementById('logoutBtn');
+logoutBtn.addEventListener('click', () => {
+  if(confirm("Yakin ingin logout?")) {
+    localStorage.removeItem("login_status");
+    localStorage.removeItem("login_user");
+    window.location.href = "login.html"; // ubah ke halaman login Anda
   }
 });
 
