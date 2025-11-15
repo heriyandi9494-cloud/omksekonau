@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Data OMK SeKonau — Manager Lengkap</title>
+
+<!-- jsPDF CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  :root{
+    --bg:#eef3ff; --card:#fff; --accent:#0066ff; --text:#0b1220; --muted:#65748b;
+    --glow: 0 6px 24px rgba(0,102,255,0.12);
+  }
+  /* Theme: Blue Light (default) */
+  .theme-blue {
+    --bg:#eef3ff; --card:#ffffff; --accent:#0066ff; --text:#07224d; --muted:#50607b; --glow:0 10px 30px rgba(0,102,255,0.14);
+  }
+  .theme-gold {
+    --bg:#fff8ef; --card:#1b1b1b; --accent:#d4a017; --text:#f8efe0; --muted:#cbb08b; --glow:0 10px 30px rgba(212,160,23,0.12);
+  }
+  .theme-red {
+    --bg:#1b0f0f; --card:#0f0b0b; --accent:#d92626; --text:#ffecec; --muted:#c49b9b; --glow:0 10px 30px rgba(217,38,38,0.12);
+  }
+  .theme-green {
+    --bg:#eaffef; --card:#ffffff; --accent:#00b35a; --text:#0b3b24; --muted:#3d6b57; --glow:0 10px 30px rgba(0,179,90,0.12);
+  }
+  .theme-white {
+    --bg:#f7f8fb; --card:#ffffff; --accent:#3b82f6; --text:#0b1321; --muted:#7a8796; --glow:0 10px 30px rgba(59,130,246,0.06);
+  }
+
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg, var(--bg), #ffffff);
+    color:var(--text);
+    padding:24px;
+    transition: background .25s ease;
+  }
+
+  .container{
+    max-width:1100px;
+    margin:0 auto;
+  }
+
+  header{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  h1{font-size:20px;margin:0}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+
+  .top-controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .theme-select{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:var(--card);cursor:pointer}
+  .search-input{
+    padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);min-width:240px;
+  }
+
+  /* Layout */
+  .grid{
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    gap:18px;
+    align-items:start;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    padding:14px;
+    box-shadow:var(--glow);
+    border:1px solid rgba(10,10,10,0.03);
+  }
+
+  /* Form */
+  .form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .form-row label{font-size:13px;color:var(--muted)}
+  input[type="text"], input[type="url"]{
+    padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);font-size:14px;
+  }
+  .btn{
+    padding:10px 12px;border-radius:10px;border:none;cursor:pointer;background:var(--accent);color:white;font-weight:600;
+  }
+  .btn.secondary{background:transparent;color:var(--accent);border:1px solid rgba(0,0,0,0.06)}
+  .btn.warn{background:#ff6b6b}
+
+  .actions-row{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* Table */
+  .table-wrap{overflow:auto}
+  table{width:100%;border-collapse:collapse;min-width:720px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(0,0,0,0.05);font-size:14px}
+  thead th{background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.00));position:sticky;top:0;z-index:2}
+  th.sortable{cursor:pointer;user-select:none}
+  th .sort-ind{font-size:11px;color:var(--muted);margin-left:8px}
+
+  a.keterangan-link{color:var(--accent);font-weight:600;text-decoration:none}
+  .small-muted{font-size:12px;color:var(--muted)}
+
+  .row-actions{display:flex;gap:8px}
+  .chip{padding:6px 8px;border-radius:8px;background:rgba(0,0,0,0.03);font-size:13px}
+
+  /* Responsive */
+  @media (max-width:980px){
+    .grid{grid-template-columns:1fr; }
+    .table-wrap{overflow:auto}
+  }
+</style>
+</head>
+<body class="theme-blue">
+<div class="container">
+  <header>
+    <div>
+      <h1>Data OMK SeKonau — Manager Lengkap</h1>
+      <p class="lead">Tambah, edit, cari, sortir, tema, dan ekspor PDF — semua tersimpan otomatis.</p>
+    </div>
+
+    <div class="top-controls">
+      <input id="globalSearch" class="search-input" placeholder="Cari: nama, status, keterangan..." />
+      <select id="themeSelector" class="theme-select" title="Pilih tema">
+        <option value="theme-blue">1 • Biru Cahaya</option>
+        <option value="theme-gold">2 • Emas Premium</option>
+        <option value="theme-red">3 • Merah–Hitam</option>
+        <option value="theme-green">4 • Hijau Neon</option>
+        <option value="theme-white">5 • Putih Minimalis</option>
+      </select>
+      <button id="exportPdfBtn" class="btn" title="Download PDF">Export PDF</button>
+      <button id="clearAllBtn" class="btn secondary" title="Hapus semua data (localStorage)">Clear All</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- FORM -->
+    <aside class="card">
+      <h3 id="formTitle">Tambah Anggota</h3>
+
+      <div class="form-row">
+        <label>Nama</label>
+        <input id="inputNama" type="text" placeholder="Nama lengkap..." />
+      </div>
+
+      <div class="form-row">
+        <label>Status</label>
+        <input id="inputStatus" type="text" placeholder="Contoh: Pelajar / Mahasiswa / Bekerja" />
+      </div>
+
+      <div class="form-row">
+        <label>Keterangan (link atau WA)</label>
+        <input id="inputKeterangan" type="url" placeholder="Contoh: https://wa.me/628xxxx atau https://instagram.com/nama" />
+        <div class="small-muted">Jika memasukkan nomor WA, gunakan format: https://wa.me/628xxxx</div>
+      </div>
+
+      <div class="actions-row" style="margin-top:8px">
+        <button id="submitBtn" class="btn">Tambah</button>
+        <button id="resetBtn" class="btn secondary">Bersihkan</button>
+        <div style="flex:1"></div>
+        <div class="small-muted" id="countInfo">Total: 0</div>
+      </div>
+    </aside>
+
+    <!-- TABLE -->
+    <section>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="small-muted">Tabel anggota OMK</div>
+          <div class="small-muted">Klik header <strong>Nama</strong> atau <strong>Status</strong> untuk mengurutkan</div>
+        </div>
+
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th style="width:48px">No</th>
+                <th class="sortable" data-key="nama">Nama <span class="sort-ind" id="sortNama"></span></th>
+                <th class="sortable" data-key="status">Status <span class="sort-ind" id="sortStatus"></span></th>
+                <th>Keterangan (link)</th>
+                <th style="width:170px">Aksi</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="margin-top:18px;text-align:center;color:var(--muted);font-size:13px">
+    OMK SeKonau Manager • Data disimpan lokal di browser Anda
+  </footer>
+</div>
+
+<script>
+/* ====== App State ====== */
+let dataKey = "omk_sekonau_v2";
+let data = JSON.parse(localStorage.getItem(dataKey)) || [];
+let editIndex = -1;
+let sortState = {key: null, dir: 1}; // dir: 1 asc, -1 desc
+
+/* ====== DOM ====== */
+const inputNama = document.getElementById('inputNama');
+const inputStatus = document.getElementById('inputStatus');
+const inputKeterangan = document.getElementById('inputKeterangan');
+const submitBtn = document.getElementById('submitBtn');
+const resetBtn = document.getElementById('resetBtn');
+const tbody = document.querySelector('#dataTable tbody');
+const countInfo = document.getElementById('countInfo');
+const globalSearch = document.getElementById('globalSearch');
+const themeSelector = document.getElementById('themeSelector');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+const formTitle = document.getElementById('formTitle');
+
+/* ====== Utilities ====== */
+function saveData(){
+  localStorage.setItem(dataKey, JSON.stringify(data));
+}
+function formatSafe(text){
+  return (text || '').toString();
+}
+function isValidURL(str){
+  try { new URL(str); return true; } catch(e){ return false; }
+}
+function detectWhatsapp(url){
+  // simple detection: contains wa.me or whatsapp.com or tel:62 or starts with 08 (not full-proof)
+  if(!url) return false;
+  return /wa\.me|whatsapp\.com|^tel:|^08/.test(url);
+}
+
+/* ====== Render ====== */
+function renderTable(filterText = ''){
+  tbody.innerHTML = '';
+  let list = data.slice();
+
+  // filter (search in nama, status, keterangan)
+  const q = (filterText || '').trim().toLowerCase();
+  if(q){
+    list = list.filter(item =>
+      (item.nama || '').toLowerCase().includes(q) ||
+      (item.status || '').toLowerCase().includes(q) ||
+      (item.keterangan || '').toLowerCase().includes(q)
+    );
+  }
+
+  // sort
+  if(sortState.key){
+    list.sort((a,b) => {
+      const ka = (a[sortState.key]||'').toLowerCase();
+      const kb = (b[sortState.key]||'').toLowerCase();
+      if(ka < kb) return -1 * sortState.dir;
+      if(ka > kb) return 1 * sortState.dir;
+      return 0;
+    });
+  }
+
+  list.forEach((item, idx) => {
+    const realIndex = data.indexOf(item); // index in original
+    const tr = document.createElement('tr');
+
+    // No
+    const tdNo = document.createElement('td'); tdNo.textContent = idx + 1; tr.appendChild(tdNo);
+
+    // Nama
+    const tdNama = document.createElement('td'); tdNama.textContent = formatSafe(item.nama); tr.appendChild(tdNama);
+
+    // Status
+    const tdStatus = document.createElement('td'); tdStatus.textContent = formatSafe(item.status); tr.appendChild(tdStatus);
+
+    // Keterangan - link
+    const tdKeterangan = document.createElement('td');
+    const link = document.createElement('a');
+    let k = item.keterangan || '';
+    if(k && !isValidURL(k)){
+      // if user typed number like 0812..., try to format as wa.me
+      if(/^[0+]/.test(k.replace(/\s+/g,''))){
+        // try to build wa.me if looks like number
+        const digits = k.replace(/\D/g,'');
+        k = 'https://wa.me/' + (digits.startsWith('0') ? ('62'+digits.slice(1)) : digits);
+      } else {
+        // fallback: prepend http://
+        k = 'http://' + k;
+      }
+    }
+    link.href = k || '#';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = k ? 'Lihat' : '-';
+    link.className = 'keterangan-link';
+    tdKeterangan.appendChild(link);
+
+    // If it's whatsapp, add copy button
+    if(k && detectWhatsapp(k)){
+      const space = document.createTextNode(' ');
+      tdKeterangan.appendChild(space);
+      const copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Copy WA';
+      copyBtn.className = 'chip';
+      copyBtn.style.cursor = 'pointer';
+      copyBtn.onclick = (e) => {
+        e.stopPropagation();
+        let phone = k.replace(/(https?:\/\/)?(www\.)?wa\.me\//i,'').replace(/\D/g,'');
+        if(!phone) phone = k;
+        navigator.clipboard?.writeText(phone).then(()=> alert('Nomor WA disalin: ' + phone), ()=> alert('Gagal menyalin'));
+      };
+      tdKeterangan.appendChild(copyBtn);
+    }
+
+    tr.appendChild(tdKeterangan);
+
+    // Aksi
+    const tdAksi = document.createElement('td');
+    tdAksi.className = 'row-actions';
+    // Edit
+    const btnEdit = document.createElement('button');
+    btnEdit.className = 'chip';
+    btnEdit.textContent = 'Edit';
+    btnEdit.onclick = () => startEdit(realIndex);
+    tdAksi.appendChild(btnEdit);
+    // Duplicate
+    const btnDup = document.createElement('button');
+    btnDup.className = 'chip';
+    btnDup.textContent = 'Duplikat';
+    btnDup.onclick = () => { data.splice(realIndex+1, 0, {...item}); saveData(); renderTable(globalSearch.value); };
+    tdAksi.appendChild(btnDup);
+    // Hapus
+    const btnHapus = document.createElement('button');
+    btnHapus.className = 'chip';
+    btnHapus.style.background = 'rgba(255,90,90,0.08)';
+    btnHapus.textContent = 'Hapus';
+    btnHapus.onclick = () => {
+      if(confirm('Hapus anggota "' + item.nama + '" ?')){
+        data.splice(realIndex,1); saveData(); renderTable(globalSearch.value);
+      }
+    };
+    tdAksi.appendChild(btnHapus);
+
+    tr.appendChild(tdAksi);
+    tbody.appendChild(tr);
+  });
+
+  countInfo.textContent = 'Total: ' + data.length + (q ? ' • Menampilkan: ' + list.length : '');
+}
+
+/* ====== Form actions ====== */
+function resetForm(){
+  inputNama.value = '';
+  inputStatus.value = '';
+  inputKeterangan.value = '';
+  editIndex = -1;
+  submitBtn.textContent = 'Tambah';
+  formTitle.textContent = 'Tambah Anggota';
+}
+
+function startEdit(i){
+  const item = data[i];
+  if(!item) return;
+  inputNama.value = item.nama || '';
+  inputStatus.value = item.status || '';
+  inputKeterangan.value = item.keterangan || '';
+  editIndex = i;
+  submitBtn.textContent = 'Update';
+  formTitle.textContent = 'Edit Anggota';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ====== Submit ====== */
+submitBtn.addEventListener('click', () => {
+  const nama = inputNama.value.trim();
+  const status = inputStatus.value.trim();
+  const keterangan = inputKeterangan.value.trim();
+
+  if(!nama || !status){
+    alert('Nama dan Status wajib diisi.');
+    return;
+  }
+
+  const entry = {nama, status, keterangan};
+  if(editIndex === -1){
+    data.push(entry);
+  } else {
+    data[editIndex] = entry;
+  }
+
+  saveData();
+  renderTable(globalSearch.value);
+  resetForm();
+});
+
+/* ====== Other controls ====== */
+resetBtn.addEventListener('click', () => {
+  resetForm();
+});
+
+globalSearch.addEventListener('input', (e) => {
+  renderTable(e.target.value);
+});
+
+document.querySelectorAll('th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if(sortState.key === key) sortState.dir *= -1;
+    else { sortState.key = key; sortState.dir = 1; }
+    // update sort indicators
+    document.getElementById('sortNama').textContent = sortState.key==='nama' ? (sortState.dir===1?'▲':'▼') : '';
+    document.getElementById('sortStatus').textContent = sortState.key==='status' ? (sortState.dir===1?'▲':'▼') : '';
+    renderTable(globalSearch.value);
+  });
+});
+
+/* ====== Theme selector ====== */
+themeSelector.addEventListener('change', (e) => {
+  const cls = e.target.value;
+  document.body.classList.remove('theme-blue','theme-gold','theme-red','theme-green','theme-white');
+  document.body.classList.add(cls);
+  // save theme
+  localStorage.setItem(dataKey + '_theme', cls);
+});
+// load saved theme
+const savedTheme = localStorage.getItem(dataKey + '_theme') || 'theme-blue';
+themeSelector.value = savedTheme;
+document.body.classList.add(savedTheme);
+
+/* ====== Export PDF (jsPDF) ====== */
+exportPdfBtn.addEventListener('click', async () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const margin = 40;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const usableW = pageWidth - margin*2;
+  const lineHeight = 16;
+  let y = margin;
+
+  doc.setFontSize(18);
+  doc.text('Data OMK SeKonau', margin, y);
+  y += 24;
+  doc.setFontSize(11);
+
+  // header row
+  const headers = ['No','Nama','Status','Keterangan'];
+  const colWidths = [40, Math.round(usableW*0.35), Math.round(usableW*0.30), Math.round(usableW*0.33)];
+  // draw header
+  doc.setFont(undefined, 'bold');
+  let x = margin;
+  headers.forEach((h, i) => {
+    doc.text(h, x + 2, y);
+    x += colWidths[i];
+  });
+  doc.setFont(undefined, 'normal');
+  y += 14;
+
+  // rows - use filtered view
+  const rows = data.slice();
+  rows.forEach((r, idx) => {
+    x = margin;
+    const cells = [
+      String(idx+1),
+      r.nama || '',
+      r.status || '',
+      r.keterangan || ''
+    ];
+    // check for page break
+    const requiredHeight = lineHeight;
+    if(y + requiredHeight > doc.internal.pageSize.getHeight() - margin){
+      doc.addPage();
+      y = margin;
+    }
+    // print row (wrap long text)
+    // naive wrapping: split by space to fit width
+    const maxLines = Math.max(
+      doc.splitTextToSize(cells[0], colWidths[0]-4).length,
+      doc.splitTextToSize(cells[1], colWidths[1]-4).length,
+      doc.splitTextToSize(cells[2], colWidths[2]-4).length,
+      doc.splitTextToSize(cells[3], colWidths[3]-4).length
+    );
+    for(let line=0; line<maxLines; line++){
+      x = margin;
+      // each cell's lines
+      doc.text(doc.splitTextToSize(cells[0], colWidths[0]-4)[line] || '', x+2, y);
+      x += colWidths[0];
+      doc.text(doc.splitTextToSize(cells[1], colWidths[1]-4)[line] || '', x+2, y);
+      x += colWidths[1];
+      doc.text(doc.splitTextToSize(cells[2], colWidths[2]-4)[line] || '', x+2, y);
+      x += colWidths[2];
+      doc.text(doc.splitTextToSize(cells[3], colWidths[3]-4)[line] || '', x+2, y);
+      y += lineHeight;
+      if(y > doc.internal.pageSize.getHeight() - margin - 10){
+        doc.addPage();
+        y = margin;
+      }
+    }
+  });
+
+  doc.save('Data_OMK_SeKonau.pdf');
+});
+
+/* ====== Clear All ====== */
+clearAllBtn.addEventListener('click', () => {
+  if(confirm('Hapus SEMUA data dari localStorage? Tindakan ini tidak dapat dibatalkan.')){
+    data = [];
+    saveData();
+    renderTable();
+  }
+});
+
+/* ====== Init ====== */
+renderTable();
+</script>
+</body>
+</html>
