@@ -201,311 +201,335 @@
   </footer>
 </div>
 
-<script>
-/* ====== App State ====== */
-let dataKey = "omk_sekonau_v2";
-let data = JSON.parse(localStorage.getItem(dataKey)) || [];
-let editIndex = -1;
-let sortState = {key: null, dir: 1};
+<!-- ====== SCRIPT: Firebase + App Logic (module) ====== -->
+<script type="module">
+  /* ====== Firebase (modular) imports ====== */
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getDatabase, ref, push, set, onValue, remove, update
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-/* ====== DOM ====== */
-const inputNama = document.getElementById('inputNama');
-const inputStatus = document.getElementById('inputStatus');
-const inputKeterangan = document.getElementById('inputKeterangan');
-const submitBtn = document.getElementById('submitBtn');
-const resetBtn = document.getElementById('resetBtn');
-const tbody = document.querySelector('#dataTable tbody');
-const countInfo = document.getElementById('countInfo');
-const globalSearch = document.getElementById('globalSearch');
-const themeSelector = document.getElementById('themeSelector');
-const exportPdfBtn = document.getElementById('exportPdfBtn');
-const clearAllBtn = document.getElementById('clearAllBtn');
-const formTitle = document.getElementById('formTitle');
+  /* ====== Firebase config (kamu sudah berikan) ====== */
+  const firebaseConfig = {
+    apiKey: "AIzaSyD8omGoQr_DNcYEUMry2G62AMHDwy2GafY",
+    authDomain: "dataomk.firebaseapp.com",
+    databaseURL: "https://dataomk-default-rtdb.firebaseio.com/",
+    projectId: "dataomk",
+    storageBucket: "dataomk.firebasestorage.app",
+    messagingSenderId: "1071019175234",
+    appId: "1:1071019175234:web:292f0937044c0ace40acdb",
+    measurementId: "G-44SVR0F6ZQ"
+  };
 
-/* ====== Utilities ====== */
-function saveData(){
-  localStorage.setItem(dataKey, JSON.stringify(data));
-}
-function formatSafe(text){
-  return (text || '').toString();
-}
-function isValidURL(str){
-  try { new URL(str); return true; } catch(e){ return false; }
-}
-function detectWhatsapp(url){
-  if(!url) return false;
-  return /wa\.me|whatsapp\.com|^tel:|^08/.test(url);
-}
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const dbRef = ref(db, "omk");
 
-/* ====== Render ====== */
-function renderTable(filterText = ''){
-  tbody.innerHTML = '';
-  let list = data.slice();
+  /* ====== App State (local cache) ====== */
+  let data = [];          // array of { key, nama, status, keterangan }
+  let editKey = null;
+  let sortState = { key: null, dir: 1 };
+  const dataKey = "omk_sekonau_v2"; // for backward compatibility with theme key usage
 
-  const q = (filterText || '').trim().toLowerCase();
-  if(q){
-    list = list.filter(item =>
-      (item.nama || '').toLowerCase().includes(q) ||
-      (item.status || '').toLowerCase().includes(q) ||
-      (item.keterangan || '').toLowerCase().includes(q)
-    );
+  /* ====== DOM Refs ====== */
+  const inputNama = document.getElementById('inputNama');
+  const inputStatus = document.getElementById('inputStatus');
+  const inputKeterangan = document.getElementById('inputKeterangan');
+  const submitBtn = document.getElementById('submitBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const tbody = document.querySelector('#dataTable tbody');
+  const countInfo = document.getElementById('countInfo');
+  const globalSearch = document.getElementById('globalSearch');
+  const themeSelector = document.getElementById('themeSelector');
+  const exportPdfBtn = document.getElementById('exportPdfBtn');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  const formTitle = document.getElementById('formTitle');
+
+  /* ====== Utilities (preserve behavior) ====== */
+  function formatSafe(text){ return (text || '').toString(); }
+  function isValidURL(str){ try { new URL(str); return true; } catch(e){ return false; } }
+  function detectWhatsapp(url){
+    if(!url) return false;
+    return /wa\.me|whatsapp\.com|^tel:|^08/.test(url);
   }
 
-  if(sortState.key){
-    list.sort((a,b) => {
-      const ka = (a[sortState.key]||'').toLowerCase();
-      const kb = (b[sortState.key]||'').toLowerCase();
-      if(ka < kb) return -1 * sortState.dir;
-      if(ka > kb) return 1 * sortState.dir;
-      return 0;
-    });
-  }
+  /* ====== Realtime listener: sync local cache with Firebase ====== */
+  onValue(dbRef, (snapshot) => {
+    const val = snapshot.val() || {};
+    // convert to array with keys
+    data = Object.keys(val).map(k => ({ key: k, ...val[k] }));
+    renderTable(globalSearch.value || "");
+  });
 
-  list.forEach((item, idx) => {
-    const realIndex = data.indexOf(item);
-    const tr = document.createElement('tr');
+  /* ====== Render table (uses local cache 'data') ====== */
+  function renderTable(filterText = ''){
+    tbody.innerHTML = '';
+    let list = data.slice();
 
-    const tdNo = document.createElement('td'); tdNo.textContent = idx + 1; tr.appendChild(tdNo);
-
-    const tdNama = document.createElement('td'); tdNama.textContent = formatSafe(item.nama); tr.appendChild(tdNama);
-
-    const tdStatus = document.createElement('td'); tdStatus.textContent = formatSafe(item.status); tr.appendChild(tdStatus);
-
-    const tdKeterangan = document.createElement('td');
-    const link = document.createElement('a');
-    let k = item.keterangan || '';
-    if(k && !isValidURL(k)){
-      if(/^[0+]/.test(k.replace(/\s+/g,''))){
-        const digits = k.replace(/\D/g,'');
-        k = 'https://wa.me/' + (digits.startsWith('0') ? ('62'+digits.slice(1)) : digits);
-      } else {
-        k = 'http://' + k;
-      }
+    const q = (filterText || '').trim().toLowerCase();
+    if(q){
+      list = list.filter(item =>
+        (item.nama || '').toLowerCase().includes(q) ||
+        (item.status || '').toLowerCase().includes(q) ||
+        (item.keterangan || '').toLowerCase().includes(q)
+      );
     }
-    link.href = k || '#';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = k ? 'Lihat' : '-';
-    link.className = 'keterangan-link';
-    tdKeterangan.appendChild(link);
 
-    if(k && detectWhatsapp(k)){
-      const space = document.createTextNode(' ');
-      tdKeterangan.appendChild(space);
-      const copyBtn = document.createElement('button');
-      copyBtn.textContent = 'Copy WA';
-      copyBtn.className = 'chip';
-      copyBtn.style.cursor = 'pointer';
-      copyBtn.onclick = (e) => {
-        e.stopPropagation();
-        let phone = k.replace(/(https?:\/\/)?(www\.)?wa\.me\//i,'').replace(/\D/g,'');
-        if(!phone) phone = k;
-        navigator.clipboard?.writeText(phone).then(()=> alert('Nomor WA disalin: ' + phone), ()=> alert('Gagal menyalin'));
+    if(sortState.key){
+      list.sort((a,b) => {
+        const ka = (a[sortState.key] || '').toLowerCase();
+        const kb = (b[sortState.key] || '').toLowerCase();
+        if(ka < kb) return -1 * sortState.dir;
+        if(ka > kb) return 1 * sortState.dir;
+        return 0;
+      });
+    }
+
+    list.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+
+      const tdNo = document.createElement('td'); tdNo.textContent = idx + 1; tr.appendChild(tdNo);
+
+      const tdNama = document.createElement('td'); tdNama.textContent = formatSafe(item.nama); tr.appendChild(tdNama);
+
+      const tdStatus = document.createElement('td'); tdStatus.textContent = formatSafe(item.status); tr.appendChild(tdStatus);
+
+      const tdKeterangan = document.createElement('td');
+      const link = document.createElement('a');
+      let k = item.keterangan || '';
+      if(k && !isValidURL(k)){
+        if(/^[0+]/.test(k.replace(/\s+/g,''))){
+          const digits = k.replace(/\D/g,'');
+          k = 'https://wa.me/' + (digits.startsWith('0') ? ('62'+digits.slice(1)) : digits);
+        } else {
+          k = 'http://' + k;
+        }
+      }
+      link.href = k || '#';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = k ? 'Lihat' : '-';
+      link.className = 'keterangan-link';
+      tdKeterangan.appendChild(link);
+
+      if(k && detectWhatsapp(k)){
+        const space = document.createTextNode(' ');
+        tdKeterangan.appendChild(space);
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy WA';
+        copyBtn.className = 'chip';
+        copyBtn.style.cursor = 'pointer';
+        copyBtn.onclick = (e) => {
+          e.stopPropagation();
+          let phone = k.replace(/(https?:\/\/)?(www\.)?wa\.me\//i,'').replace(/\D/g,'');
+          if(!phone) phone = k;
+          navigator.clipboard?.writeText(phone).then(()=> alert('Nomor WA disalin: ' + phone), ()=> alert('Gagal menyalin'));
+        };
+        tdKeterangan.appendChild(copyBtn);
+      }
+
+      tr.appendChild(tdKeterangan);
+
+      const tdAksi = document.createElement('td');
+      tdAksi.className = 'row-actions';
+
+      const btnEdit = document.createElement('button');
+      btnEdit.className = 'chip';
+      btnEdit.textContent = 'Edit';
+      btnEdit.onclick = () => startEdit(item);
+      tdAksi.appendChild(btnEdit);
+
+      const btnDup = document.createElement('button');
+      btnDup.className = 'chip';
+      btnDup.textContent = 'Duplikat';
+      btnDup.onclick = () => {
+        const newRef = push(dbRef);
+        set(newRef, {
+          nama: item.nama || '',
+          status: item.status || '',
+          keterangan: item.keterangan || ''
+        });
       };
-      tdKeterangan.appendChild(copyBtn);
-    }
+      tdAksi.appendChild(btnDup);
 
-    tr.appendChild(tdKeterangan);
+      const btnHapus = document.createElement('button');
+      btnHapus.className = 'chip';
+      btnHapus.style.background = 'rgba(255,90,90,0.08)';
+      btnHapus.textContent = 'Hapus';
+      btnHapus.onclick = () => {
+        if(confirm('Hapus anggota "' + item.nama + '" ?')){
+          remove(ref(db, 'omk/' + item.key));
+        }
+      };
+      tdAksi.appendChild(btnHapus);
 
-    const tdAksi = document.createElement('td');
-    tdAksi.className = 'row-actions';
+      tr.appendChild(tdAksi);
+      tbody.appendChild(tr);
+    });
 
-    const btnEdit = document.createElement('button');
-    btnEdit.className = 'chip';
-    btnEdit.textContent = 'Edit';
-    btnEdit.onclick = () => startEdit(realIndex);
-    tdAksi.appendChild(btnEdit);
-
-    const btnDup = document.createElement('button');
-    btnDup.className = 'chip';
-    btnDup.textContent = 'Duplikat';
-    btnDup.onclick = () => { data.splice(realIndex+1, 0, {...item}); saveData(); renderTable(globalSearch.value); };
-    tdAksi.appendChild(btnDup);
-
-    const btnHapus = document.createElement('button');
-    btnHapus.className = 'chip';
-    btnHapus.style.background = 'rgba(255,90,90,0.08)';
-    btnHapus.textContent = 'Hapus';
-    btnHapus.onclick = () => {
-      if(confirm('Hapus anggota "' + item.nama + '" ?')){
-        data.splice(realIndex,1); saveData(); renderTable(globalSearch.value);
-      }
-    };
-    tdAksi.appendChild(btnHapus);
-
-    tr.appendChild(tdAksi);
-    tbody.appendChild(tr);
-  });
-
-  countInfo.textContent = 'Total: ' + data.length + (q ? ' • Menampilkan: ' + list.length : '');
-}
-
-/* ====== Form actions ====== */
-function resetForm(){
-  inputNama.value = '';
-  inputStatus.value = '';
-  inputKeterangan.value = '';
-  editIndex = -1;
-  submitBtn.textContent = 'Tambah';
-  formTitle.textContent = 'Tambah Anggota';
-}
-
-function startEdit(i){
-  const item = data[i];
-  if(!item) return;
-  inputNama.value = item.nama || '';
-  inputStatus.value = item.status || '';
-  inputKeterangan.value = item.keterangan || '';
-  editIndex = i;
-  submitBtn.textContent = 'Update';
-  formTitle.textContent = 'Edit Anggota';
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-/* ====== Submit ====== */
-submitBtn.addEventListener('click', () => {
-  const nama = inputNama.value.trim();
-  const status = inputStatus.value.trim();
-  const keterangan = inputKeterangan.value.trim();
-
-  if(!nama || !status){
-    alert('Nama dan Status wajib diisi.');
-    return;
+    countInfo.textContent = 'Total: ' + data.length + (q ? ' • Menampilkan: ' + list.length : '');
   }
 
-  const entry = {nama, status, keterangan};
-  if(editIndex === -1){
-    data.push(entry);
-  } else {
-    data[editIndex] = entry;
+  /* ====== Form actions ====== */
+  function resetForm(){
+    inputNama.value = '';
+    inputStatus.value = '';
+    inputKeterangan.value = '';
+    editKey = null;
+    submitBtn.textContent = 'Tambah';
+    formTitle.textContent = 'Tambah Anggota';
   }
 
-  saveData();
-  renderTable(globalSearch.value);
-  resetForm();
-});
+  function startEdit(item){
+    if(!item) return;
+    editKey = item.key;
+    inputNama.value = item.nama || '';
+    inputStatus.value = item.status || '';
+    inputKeterangan.value = item.keterangan || '';
+    submitBtn.textContent = 'Update';
+    formTitle.textContent = 'Edit Anggota';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
 
-/* ====== Other controls ====== */
-resetBtn.addEventListener('click', () => {
-  resetForm();
-});
+  /* ====== Submit (create/update) ====== */
+  submitBtn.addEventListener('click', () => {
+    const nama = inputNama.value.trim();
+    const status = inputStatus.value.trim();
+    const keterangan = inputKeterangan.value.trim();
 
-globalSearch.addEventListener('input', (e) => {
-  renderTable(e.target.value);
-});
-
-document.querySelectorAll('th.sortable').forEach(th => {
-  th.addEventListener('click', () => {
-    const key = th.dataset.key;
-    if(sortState.key === key) sortState.dir *= -1;
-    else { sortState.key = key; sortState.dir = 1; }
-    document.getElementById('sortNama').textContent = sortState.key==='nama' ? (sortState.dir===1?'▲':'▼') : '';
-    document.getElementById('sortStatus').textContent = sortState.key==='status' ? (sortState.dir===1?'▲':'▼') : '';
-    renderTable(globalSearch.value);
-  });
-});
-
-/* ====== Theme selector ====== */
-themeSelector.addEventListener('change', (e) => {
-  const cls = e.target.value;
-  document.body.classList.remove('theme-blue','theme-gold','theme-red','theme-green','theme-white');
-  document.body.classList.add(cls);
-  localStorage.setItem(dataKey + '_theme', cls);
-});
-const savedTheme = localStorage.getItem(dataKey + '_theme') || 'theme-blue';
-themeSelector.value = savedTheme;
-document.body.classList.add(savedTheme);
-
-/* ====== Export PDF (jsPDF) ====== */
-exportPdfBtn.addEventListener('click', async () => {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
-  const margin = 40;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const usableW = pageWidth - margin*2;
-  const lineHeight = 16;
-  let y = margin;
-
-  doc.setFontSize(18);
-  doc.text('Data OMK SeKonau', margin, y);
-  y += 24;
-  doc.setFontSize(11);
-
-  const headers = ['No','Nama','Status','Keterangan'];
-  const colWidths = [40, Math.round(usableW*0.35), Math.round(usableW*0.30), Math.round(usableW*0.33)];
-
-  doc.setFont(undefined, 'bold');
-  let x = margin;
-  headers.forEach((h, i) => {
-    doc.text(h, x + 2, y);
-    x += colWidths[i];
-  });
-  doc.setFont(undefined, 'normal');
-  y += 14;
-
-  const rows = data.slice();
-  rows.forEach((r, idx) => {
-    x = margin;
-    const cells = [
-      String(idx+1),
-      r.nama || '',
-      r.status || '',
-      r.keterangan || ''
-    ];
-
-    const requiredHeight = lineHeight;
-    if(y + requiredHeight > doc.internal.pageSize.getHeight() - margin){
-      doc.addPage();
-      y = margin;
+    if(!nama || !status){
+      alert('Nama dan Status wajib diisi.');
+      return;
     }
 
-    const maxLines = Math.max(
-      doc.splitTextToSize(cells[0], colWidths[0]-4).length,
-      doc.splitTextToSize(cells[1], colWidths[1]-4).length,
-      doc.splitTextToSize(cells[2], colWidths[2]-4).length,
-      doc.splitTextToSize(cells[3], colWidths[3]-4).length
-    );
-    for(let line=0; line<maxLines; line++){
+    if(editKey){
+      update(ref(db, 'omk/' + editKey), {
+        nama, status, keterangan
+      });
+    } else {
+      const newRef = push(dbRef);
+      set(newRef, { nama, status, keterangan });
+    }
+
+    resetForm();
+  });
+
+  /* ====== Other controls ====== */
+  resetBtn.addEventListener('click', () => resetForm());
+
+  globalSearch.addEventListener('input', (e) => renderTable(e.target.value));
+
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if(sortState.key === key) sortState.dir *= -1;
+      else { sortState.key = key; sortState.dir = 1; }
+      document.getElementById('sortNama').textContent = sortState.key==='nama' ? (sortState.dir===1?'▲':'▼') : '';
+      document.getElementById('sortStatus').textContent = sortState.key==='status' ? (sortState.dir===1?'▲':'▼') : '';
+      renderTable(globalSearch.value);
+    });
+  });
+
+  /* ====== Theme selector (simpan preferensi lokal seperti sebelumnya) ====== */
+  themeSelector.addEventListener('change', (e) => {
+    const cls = e.target.value;
+    document.body.classList.remove('theme-blue','theme-gold','theme-red','theme-green','theme-white');
+    document.body.classList.add(cls);
+    localStorage.setItem(dataKey + '_theme', cls);
+  });
+  const savedTheme = localStorage.getItem(dataKey + '_theme') || 'theme-blue';
+  themeSelector.value = savedTheme;
+  document.body.classList.add(savedTheme);
+
+  /* ====== Export PDF (jsPDF) ====== */
+  exportPdfBtn.addEventListener('click', async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const margin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const usableW = pageWidth - margin*2;
+    const lineHeight = 16;
+    let y = margin;
+
+    doc.setFontSize(18);
+    doc.text('Data OMK SeKonau', margin, y);
+    y += 24;
+    doc.setFontSize(11);
+
+    const headers = ['No','Nama','Status','Keterangan'];
+    const colWidths = [40, Math.round(usableW*0.35), Math.round(usableW*0.30), Math.round(usableW*0.33)];
+
+    doc.setFont(undefined, 'bold');
+    let x = margin;
+    headers.forEach((h, i) => {
+      doc.text(h, x + 2, y);
+      x += colWidths[i];
+    });
+    doc.setFont(undefined, 'normal');
+    y += 14;
+
+    const rows = data.slice();
+    rows.forEach((r, idx) => {
       x = margin;
-      doc.text(doc.splitTextToSize(cells[0], colWidths[0]-4)[line] || '', x+2, y);
-      x += colWidths[0];
-      doc.text(doc.splitTextToSize(cells[1], colWidths[1]-4)[line] || '', x+2, y);
-      x += colWidths[1];
-      doc.text(doc.splitTextToSize(cells[2], colWidths[2]-4)[line] || '', x+2, y);
-      x += colWidths[2];
-      doc.text(doc.splitTextToSize(cells[3], colWidths[3]-4)[line] || '', x+2, y);
-      y += lineHeight;
-      if(y > doc.internal.pageSize.getHeight() - margin - 10){
+      const cells = [
+        String(idx+1),
+        r.nama || '',
+        r.status || '',
+        r.keterangan || ''
+      ];
+
+      const requiredHeight = lineHeight;
+      if(y + requiredHeight > doc.internal.pageSize.getHeight() - margin){
         doc.addPage();
         y = margin;
       }
+
+      const maxLines = Math.max(
+        doc.splitTextToSize(cells[0], colWidths[0]-4).length,
+        doc.splitTextToSize(cells[1], colWidths[1]-4).length,
+        doc.splitTextToSize(cells[2], colWidths[2]-4).length,
+        doc.splitTextToSize(cells[3], colWidths[3]-4).length
+      );
+      for(let line=0; line<maxLines; line++){
+        x = margin;
+        doc.text(doc.splitTextToSize(cells[0], colWidths[0]-4)[line] || '', x+2, y);
+        x += colWidths[0];
+        doc.text(doc.splitTextToSize(cells[1], colWidths[1]-4)[line] || '', x+2, y);
+        x += colWidths[1];
+        doc.text(doc.splitTextToSize(cells[2], colWidths[2]-4)[line] || '', x+2, y);
+        x += colWidths[2];
+        doc.text(doc.splitTextToSize(cells[3], colWidths[3]-4)[line] || '', x+2, y);
+        y += lineHeight;
+        if(y > doc.internal.pageSize.getHeight() - margin - 10){
+          doc.addPage();
+          y = margin;
+        }
+      }
+    });
+
+    doc.save('Data_OMK_SeKonau.pdf');
+  });
+
+  /* ====== Clear All (hapus semua data di Firebase) ====== */
+  clearAllBtn.addEventListener('click', () => {
+    if(confirm('Hapus SEMUA data dari Firebase? Tindakan ini tidak dapat dibatalkan.')){
+      remove(dbRef);
     }
   });
 
-  doc.save('Data_OMK_SeKonau.pdf');
-});
+  /* ====== Logout ====== */
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn.addEventListener('click', () => {
+    if(confirm("Yakin ingin logout?")) {
+      localStorage.removeItem("login_status");
+      localStorage.removeItem("login_user");
+      window.location.href = "login.html"; // ubah ke halaman login Anda
+    }
+  });
 
-/* ====== Clear All ====== */
-clearAllBtn.addEventListener('click', () => {
-  if(confirm('Hapus SEMUA data dari localStorage? Tindakan ini tidak dapat dibatalkan.')){
-    data = [];
-    saveData();
-    renderTable();
-  }
-});
+  /* ====== Inisialisasi awal ====== */
+  renderTable();
 
-/* ⭐ ====== LOGOUT BUTTON ====== */
-const logoutBtn = document.getElementById('logoutBtn');
-logoutBtn.addEventListener('click', () => {
-  if(confirm("Yakin ingin logout?")) {
-    localStorage.removeItem("login_status");
-    localStorage.removeItem("login_user");
-    window.location.href = "login.html"; // ubah ke halaman login Anda
-  }
-});
-
-/* ====== Init ====== */
-renderTable();
 </script>
 </body>
 </html>
