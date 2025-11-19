@@ -3,279 +3,326 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login Elegan</title>
+<title>DATA OMK</title>
+
+<!-- jsPDF CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: radial-gradient(circle at top, #222, #000);
-        color: white;
-        overflow-x: hidden;
-    }
-
-    /* ----- LOGO & JUDUL BERCAYAHA ----- */
-    .header {
-        text-align: center;
-        padding: 40px 20px;
-    }
-    .header img {
-        width: 120px;
-    }
-    .glow-title {
-        font-size: 32px;
-        font-weight: bold;
-        text-shadow: 0 0 10px #00f, 0 0 20px #0099ff, 0 0 40px #00ccff;
-    }
-
-    /* ----- HALAMAN PERTAMA ----- */
-    .welcome-box {
-        text-align: center;
-        padding: 20px;
-        background: rgba(255,255,255,0.06);
-        width: 90%;
-        max-width: 650px;
-        margin: auto;
-        border-radius: 15px;
-        backdrop-filter: blur(4px);
-        box-shadow: 0 0 20px rgba(0,200,255,0.3);
-    }
-
-    .btn {
-        padding: 12px 25px;
-        border: none;
-        background: #007bff;
-        color: white;
-        font-size: 18px;
-        border-radius: 10px;
-        cursor: pointer;
-        margin-top: 20px;
-        transition: 0.3s;
-    }
-    .btn:hover {
-        background: #005fcc;
-    }
-
-    /* ------- FORM LOGIN ------ */
-    .login-box {
-        display: none;
-        margin: 30px auto;
-        width: 90%;
-        max-width: 400px;
-        background: rgba(255,255,255,0.07);
-        padding: 20px;
-        border-radius: 15px;
-        backdrop-filter: blur(5px);
-        box-shadow: 0 0 20px rgba(0,150,255,0.3);
-    }
-    .login-box input {
-        width: 94%;
-        padding: 12px;
-        margin: 8px 0;
-        border: none;
-        border-radius: 8px;
-    }
-    .login-submit {
-        width: 100%;
-        padding: 12px;
-        background: #00aaff;
-        border: none;
-        color: white;
-        font-size: 18px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 10px;
-    }
-    .login-submit:hover {
-        background: #0088cc;
-    }
-
-    /* ----- STATUS LOGIN ----- */
-    .status {
-        display: none;
-        text-align: center;
-        margin-top: 25px;
-    }
-    .status .logged-in {
-        color: #00a2ff;
-        font-weight: bold;
-        font-size: 20px;
-    }
-    .logout-btn {
-        padding: 10px 20px;
-        background: red;
-        border: none;
-        color: white;
-        font-size: 16px;
-        border-radius: 10px;
-        cursor: pointer;
-        margin-top: 15px;
-    }
-
-    /* ----- HALAMAN DATA OMK ----- */
-    #dataBox {
-        display:none;
-        margin:20px auto;
-        width:90%;
-        max-width:900px;
-        padding:20px;
-        background:rgba(255,255,255,0.07);
-        border-radius:15px;
-        backdrop-filter:blur(5px);
-        box-shadow:0 0 20px rgba(0,150,255,0.3);
-    }
-    /* ----- RESPONSIVE UNTUK HP ----- */
-@media only screen and (max-width: 600px) {
-
-    .header img {
-        width: 90px; /* logo lebih kecil */
-    }
-
-    .glow-title {
-        font-size: 24px;
-        text-shadow: 0 0 6px #00f, 0 0 12px #0099ff, 0 0 24px #00ccff;
-    }
-
-    .welcome-box, .login-box, #dataBox {
-        width: 95%;
-        padding: 15px;
-    }
-
-    .btn, .login-submit, .logout-btn, #dataBox a {
-        font-size: 16px;
-        padding: 10px 20px;
-    }
-
-    .welcome-box p, #dataBox p {
-        font-size: 16px;
-        line-height: 1.4;
-    }
-
-    .login-box input {
-        width: 92%;
-        padding: 10px;
-        font-size: 16px;
-    }
+/* ===== GLOBAL THEME ===== */
+:root{
+  --bg:#eef3ff; --card:#fff; --accent:#0066ff; --text:#0b1220; --muted:#65748b;
 }
+body{
+  margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--text);
+  padding:20px; transition:0.25s;
+}
+.container{max-width:1100px;margin:0 auto;}
+h1{font-size:22px;margin:0 0 8px 0;}
+p.lead{margin:0;color:var(--muted);font-size:13px;}
 
+/* ===== FORM + BUTTONS ===== */
+.card{background:var(--card);border-radius:14px;padding:18px;margin-bottom:20px;box-shadow:0 6px 20px rgba(0,102,255,0.12);}
+input, select, button{padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);font-size:14px;}
+button{cursor:pointer;transition:0.2s;}
+button:hover{opacity:0.85;}
+.btn-primary{background:var(--accent);color:white;border:none;}
+.btn-secondary{background:#fff;color:var(--accent);border:1px solid rgba(0,0,0,0.08);}
+.btn-warn{background:#ff6b6b;color:white;border:none;}
+.actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* ===== TABLE ===== */
+.table-wrap{overflow:auto;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(0,0,0,0.05);}
+thead th{position:sticky;top:0;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.00));}
+th.sortable{cursor:pointer;}
+.sort-ind{font-size:11px;color:var(--muted);margin-left:6px;}
+.badge{padding:4px 8px;border-radius:8px;color:white;font-size:12px;font-weight:600;}
+
+/* ===== MODAL PREMIUM++ ==== */
+#statusModal{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background: rgba(0,0,0,0.35); backdrop-filter:blur(6px);
+  display:none; justify-content:center; align-items:flex-end; padding-bottom:40px; z-index:9999;
+}
+#statusBox{
+  width:90%; max-width:380px; background:#fff; border-radius:20px; padding:25px;
+  box-shadow:0 10px 35px rgba(0,0,0,0.3); animation: slideUp 0.35s ease-out;
+  text-align:center; position:relative;
+}
+#statusIcon{font-size:55px;margin-bottom:10px; animation:pulse 1s infinite;}
+#statusBox h2{margin:5px 0 8px 0;font-size:25px;font-weight:bold;}
+#statusBox p{font-size:15px;color:#333;line-height:1.4;margin-bottom:18px;}
+#closeModal{padding:10px 20px;border:none;border-radius:12px;background:#0036ff;color:white;font-size:15px;cursor:pointer;transition:0.2s;}
+#closeModal:hover{transform:scale(1.05);}
+
+@keyframes slideUp{from{transform:translateY(50px);opacity:0;} to{transform:translateY(0);opacity:1;}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 </style>
-
-<!-- Firebase (DARI CODE ANDA, TIDAK DIUBAH) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCWKrvRXSsefKayAudgkAwB1x9DFiakh3Q",
-  authDomain: "akses-omk.firebaseapp.com",
-  projectId: "akses-omk",
-  storageBucket: "akses-omk.firebasestorage.app",
-  messagingSenderId: "458484845426",
-  appId: "1:458484845426:web:6e1398296a7f6167626beb",
-  measurementId: "G-QEJETZ4C53"
-};
-
-// Firebase Inisialisasi (MENGIKUTI CODE ANDA)
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-</script>
-
 </head>
 <body>
+<div class="container">
 
-<div class="header">
-    <img src="https://i.postimg.cc/XJ1sW3v1/articles-My-Gsv-MX-news-g5hoqxs-Santo-Petrus-dan-Santo-Paulus-Rasul-001-removebg-preview.png">
-    <div class="glow-title">DATABASE OMK SEKONAU</div>
-</div>
+  <h1>DATA OMK ST PETRUS DAN PAULUS RASUL SEKONAU</h1>
+  <p class="lead">Bagi yang belum terdaftar silahkan tambahkan keanggotaan anda sekarang juga</p>
 
-<!-- HALAMAN INTRO -->
-<div class="welcome-box" id="welcome">
-    <h2>Selamat Datang</h2>
-    <p>
-        𝐇𝐚𝐥𝐚𝐦𝐚𝐧 𝐢𝐧𝐢 𝐛𝐞𝐫𝐢𝐬𝐢 𝐝𝐚𝐭𝐚 𝐎𝐌𝐊 𝐒𝐞𝐤𝐨𝐧𝐚𝐮, 𝐝𝐚𝐧 𝐛𝐞𝐫𝐛𝐚𝐠𝐚𝐢 𝐢𝐧𝐟𝐨𝐫𝐦𝐚𝐬𝐢 𝐢𝐧𝐭𝐞𝐫𝐧𝐚𝐥 𝐥𝐚𝐢𝐧𝐧𝐲𝐚.
-        𝐊𝐥𝐢𝐤 𝐭𝐨𝐦𝐛𝐨𝐥 𝐝𝐢 𝐛𝐚𝐰𝐚𝐡 𝐮𝐧𝐭𝐮𝐤 𝐦𝐚𝐬𝐮𝐤 𝐤𝐞 𝐡𝐚𝐥𝐚𝐦𝐚𝐧 𝐥𝐨𝐠𝐢𝐧.
-    </p>
-    <button class="btn" onclick="showLogin()">MASUK</button>
-</div>
-
-<!-- FORM LOGIN -->
-<div class="login-box" id="loginBox">
-    <h3 style="text-align:center;">Login Akun</h3>
-    <input type="text" placeholder="Username" id="user">
-    <input type="password" placeholder="Password" id="pass">
-    <button class="login-submit" onclick="doLogin()">LOGIN</button>
-</div>
-
-<!-- STATUS LOGIN -->
-<div class="status" id="statusBox">
-    <div class="logged-in">LOGIN BERHASIL ✔</div>
-    <button class="logout-btn" onclick="doLogout()">LOGOUT</button>
-</div>
-
-<!-- HALAMAN DATA OMK -->
-
-<div id="dataBox">
-    <h2 style="text-align:center;">DATA OMK SEKONAU</h2>
-
-    <p style="text-align:center; font-size:18px;">
-        𝐊𝐥𝐢𝐤 𝐭𝐨𝐦𝐛𝐨𝐥 𝐝𝐢 𝐛𝐚𝐰𝐚𝐡 𝐮𝐧𝐭𝐮𝐤 𝐦𝐞𝐦𝐛𝐮𝐤𝐚 𝐡𝐚𝐥𝐚𝐦𝐚𝐧 𝐝𝐚𝐭𝐚 𝐥𝐞𝐧𝐠𝐤𝐚𝐩 𝐎𝐌𝐊 𝐒𝐞𝐤𝐨𝐧𝐚𝐮.
-    </p>
-
-    <div style="text-align:center; margin-top:20px;">
-        <a href="https://heriyandi9494-cloud.github.io/omksekonau/" 
-           target="_blank" 
-           style="
-                display:inline-block;
-                padding:15px 25px;
-                background:#00aaff;
-                font-size:20px;
-                color:white;
-                border-radius:12px;
-                text-decoration:none;
-                box-shadow:0 0 12px rgba(0,180,255,0.7);
-           ">
-           📁 BUKA DATA OMK SEKONAU
-        </a>
+  <!-- FORM -->
+  <div class="card">
+    <h3 id="formTitle">TAMBAH ANGGOTA</h3>
+    <div class="form-row"><label>NAMA</label><input type="text" id="inputNama" placeholder="Nama lengkap..."></div>
+    <div class="form-row"><label>STATUS</label><input type="text" id="inputStatus" placeholder="Aktif/Tidak Aktif/Baru/Alumni"></div>
+    <div class="form-row"><label>WA</label><input type="url" id="inputKeterangan" placeholder="Contoh: https://wa.me/628xxxx"></div>
+    <div class="actions-row">
+      <button id="submitBtn" class="btn-primary">Tambah</button>
+      <button id="resetBtn" class="btn-secondary">Bersihkan</button>
+      <div style="flex:1"></div>
+      <div id="countInfo">Total: 0</div>
     </div>
-</div>
+  </div>
+
+  <!-- CONTROL + SEARCH -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+    <input id="globalSearch" placeholder="Cari: nama, status..." style="padding:8px;flex:1;border-radius:8px;border:1px solid #ccc;">
+    <button id="exportPdfBtn" class="btn-primary">Export PDF</button>
+    <button id="clearAllBtn" class="btn-secondary">Clear All</button>
+    <button id="logoutBtn" class="btn-warn">Logout</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card table-wrap">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th class="sortable" data-key="nama">Nama <span class="sort-ind" id="sortNama"></span></th>
+          <th class="sortable" data-key="status">Status <span class="sort-ind" id="sortStatus"></span></th>
+          <th>Keterangan</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
 </div>
 
-<script>
-    function showLogin() {
-        document.getElementById("welcome").style.display = "none";
-        document.getElementById("loginBox").style.display = "block";
+<!-- MODAL PREMIUM++ -->
+<div id="statusModal">
+  <div id="statusBox">
+    <div id="statusIcon">🔵</div>
+    <h2 id="modalTitle">Status</h2>
+    <p id="modalDesc"></p>
+    <button id="closeModal">Tutup</button>
+  </div>
+</div>
+
+<script type="module">
+// ===== Firebase Modular =====
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD8omGoQr_DNcYEUMry2G62AMHDwy2GafY",
+  authDomain: "dataomk.firebaseapp.com",
+  databaseURL: "https://dataomk-default-rtdb.firebaseio.com/",
+  projectId: "dataomk",
+  storageBucket: "dataomk.firebasestorage.app",
+  messagingSenderId: "1071019175234",
+  appId: "1:1071019175234:web:292f0937044c0ace40acdb",
+  measurementId: "G-44SVR0F6ZQ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const dbRef = ref(db, "omk");
+
+// ===== State =====
+let data = [], editKey = null, sortState={key:null,dir:1};
+
+// ===== DOM Refs =====
+const inputNama = document.getElementById('inputNama');
+const inputStatus = document.getElementById('inputStatus');
+const inputKeterangan = document.getElementById('inputKeterangan');
+const submitBtn = document.getElementById('submitBtn');
+const resetBtn = document.getElementById('resetBtn');
+const tbody = document.querySelector('#dataTable tbody');
+const countInfo = document.getElementById('countInfo');
+const globalSearch = document.getElementById('globalSearch');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const formTitle = document.getElementById('formTitle');
+
+// ===== Utility =====
+function formatSafe(text){ return (text||'').toString(); }
+
+// ===== Modal Status =====
+function infoStatus(status, waLink=null){
+  const modal = document.getElementById("statusModal");
+  const icon = document.getElementById("statusIcon");
+  const title = document.getElementById("modalTitle");
+  const desc = document.getElementById("modalDesc");
+
+  let warna = "#0036ff", emoji="🔵", teks="";
+
+  switch(status.toLowerCase()){
+    case "aktif": warna="#1cb731"; emoji="🟢"; teks="Anggota aktif mengikuti kegiatan OMK dan terdata resmi."; break;
+    case "tidak aktif": warna="#d90000"; emoji="🔴"; teks="Anggota tidak hadir dalam periode terakhir."; break;
+    case "baru": warna="#ff9900"; emoji="🟠"; teks="Anggota baru terdaftar dan siap bergabung."; break;
+    case "alumni": warna="#5555ff"; emoji="🔵"; teks="Anggota telah menjadi alumni OMK."; break;
+    default: teks="Tidak ada penjelasan untuk status ini."; emoji="⚪";
+  }
+
+  if(waLink){
+    teks += "\nKlik tombol WA untuk hubungi.";
+  }
+
+  icon.textContent = emoji;
+  title.textContent = status.toUpperCase();
+  title.style.color = warna;
+  desc.textContent = teks;
+
+  // Tambahkan tombol WA jika ada link
+  if(waLink && !document.getElementById('modalWaBtn')){
+    const waBtn = document.createElement('button');
+    waBtn.id = 'modalWaBtn';
+    waBtn.textContent = "Kirim WA";
+    waBtn.className = '';
+    waBtn.style.cssText="margin-top:8px;padding:8px 14px;border-radius:8px;background:#25D366;color:white;border:none;cursor:pointer;";
+    waBtn.onclick=()=>{ window.open(waLink,'_blank'); }
+    document.getElementById('statusBox').appendChild(waBtn);
+  } else if(!waLink && document.getElementById('modalWaBtn')){
+    document.getElementById('modalWaBtn').remove();
+  }
+
+  modal.style.display = "flex";
+}
+
+// Tutup modal
+document.getElementById("closeModal").onclick = ()=>document.getElementById("statusModal").style.display="none";
+window.onclick = e=>{if(e.target===document.getElementById("statusModal")) document.getElementById("statusModal").style.display="none";};
+
+// ===== RENDER TABLE =====
+onValue(dbRef, snapshot=>{
+  const val = snapshot.val()||{};
+  data = Object.keys(val).map(k=>({key:k,...val[k]}));
+  renderTable(globalSearch.value);
+});
+
+function renderTable(filterText=""){
+  tbody.innerHTML="";
+  let list = data.slice();
+  const q = (filterText||"").trim().toLowerCase();
+  if(q) list = list.filter(i=> (i.nama||"").toLowerCase().includes(q) || (i.status||"").toLowerCase().includes(q));
+
+  if(sortState.key) list.sort((a,b)=>{
+    const ka=(a[sortState.key]||"").toLowerCase(), kb=(b[sortState.key]||"").toLowerCase();
+    return ka<kb?-1*sortState.dir:ka>kb?1*sortState.dir:0;
+  });
+
+  list.forEach((item,idx)=>{
+    const tr=document.createElement('tr');
+
+    const tdNo=document.createElement('td'); tdNo.textContent=idx+1; tr.appendChild(tdNo);
+
+    const tdNama=document.createElement('td'); tdNama.textContent=formatSafe(item.nama); tr.appendChild(tdNama);
+
+    const tdStatus=document.createElement('td');
+    const badge=document.createElement('span'); badge.className='badge';
+    let color="#0036ff";
+    switch((item.status||"").toLowerCase()){
+      case "aktif": color="#1cb731"; break;
+      case "tidak aktif": color="#d90000"; break;
+      case "baru": color="#ff9900"; break;
+      case "alumni": color="#5555ff"; break;
     }
+    badge.style.background=color;
+    badge.textContent=item.status||"-";
+    tdStatus.appendChild(badge);
+    tr.appendChild(tdStatus);
 
-    function doLogin() {
-        let u = document.getElementById("user").value;
-        let p = document.getElementById("pass").value;
+    // Keterangan (Detail + WA)
+    const tdKet=document.createElement('td');
+    const btn=document.createElement('button');
+    btn.textContent='Detail Status';
+    btn.style.cssText="padding:6px 10px;border:none;border-radius:6px;background:#0036ff;color:white;cursor:pointer;";
+    let waLink = item.keterangan || null;
+    btn.onclick=()=>infoStatus(item.status, waLink);
+    tdKet.appendChild(btn);
+    tr.appendChild(tdKet);
 
-        if (u === "" || p === "") {
-            alert("Username dan password harus diisi!");
-            return;
-        }
+    // Aksi
+    const tdAksi=document.createElement('td');
+    tdAksi.style.display="flex"; tdAksi.style.gap="6px";
 
-        // LOGIN BERHASIL (versi Anda tetap dipakai)
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("statusBox").style.display = "block";
+    const btnEdit=document.createElement('button'); btnEdit.textContent='Edit'; btnEdit.onclick=()=>startEdit(item); tdAksi.appendChild(btnEdit);
+    const btnDup=document.createElement('button'); btnDup.textContent='Duplikat'; btnDup.onclick=()=>{const newRef=push(dbRef); set(newRef,{nama:item.nama,status:item.status,keterangan:item.keterangan});}; tdAksi.appendChild(btnDup);
+    const btnHapus=document.createElement('button'); btnHapus.textContent='Hapus'; btnHapus.style.background="#ff6b6b"; btnHapus.onclick=()=>{if(confirm('Hapus anggota "'+item.nama+'"?')) remove(ref(db,'omk/'+item.key));}; tdAksi.appendChild(btnHapus);
 
-        // TAMPILKAN DATA SETELAH 1 DETIK
-        setTimeout(() => {
-            document.getElementById("statusBox").style.display = "none";
-            document.getElementById("dataBox").style.display = "block";
-        }, 1000);
+    tr.appendChild(tdAksi);
+    tbody.appendChild(tr);
+  });
+
+  countInfo.textContent='Total: '+data.length+(q?' • Menampilkan: '+list.length:'');
+}
+
+// ===== FORM =====
+function resetForm(){ inputNama.value=''; inputStatus.value=''; inputKeterangan.value=''; editKey=null; submitBtn.textContent='Tambah'; formTitle.textContent='Tambah Anggota'; }
+function startEdit(item){ editKey=item.key; inputNama.value=item.nama||''; inputStatus.value=item.status||''; inputKeterangan.value=item.keterangan||''; submitBtn.textContent='Update'; formTitle.textContent='Edit Anggota'; window.scrollTo({top:0,behavior:'smooth'}); }
+
+submitBtn.onclick=()=>{
+  const nama=inputNama.value.trim(), status=inputStatus.value.trim(), keterangan=inputKeterangan.value.trim();
+  if(!nama||!status){ alert('Nama & Status wajib diisi'); return;}
+  if(editKey) update(ref(db,'omk/'+editKey),{nama,status,keterangan});
+  else{ const newRef=push(dbRef); set(newRef,{nama,status,keterangan}); }
+  resetForm();
+}
+
+resetBtn.onclick=()=>resetForm();
+globalSearch.oninput=e=>renderTable(e.target.value);
+
+document.querySelectorAll('th.sortable').forEach(th=>{
+  th.onclick=()=>{
+    const key=th.dataset.key;
+    if(sortState.key===key) sortState.dir*=-1; else {sortState.key=key; sortState.dir=1;}
+    document.getElementById('sortNama').textContent=sortState.key==='nama'?(sortState.dir===1?'▲':'▼'):'';
+    document.getElementById('sortStatus').textContent=sortState.key==='status'?(sortState.dir===1?'▲':'▼'):'';
+    renderTable(globalSearch.value);
+  }
+});
+
+// ===== EXPORT PDF =====
+exportPdfBtn.onclick=()=>{
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt',format:'a4'});
+  const margin=40, pageW=doc.internal.pageSize.getWidth(), usableW=pageW-margin*2, lh=16;
+  let y=margin;
+  doc.setFontSize(18); doc.text('Data OMK SeKonau',margin,y); y+=24;
+  doc.setFontSize(11); const headers=['No','Nama','Status','Keterangan']; const colWidths=[40,usableW*0.35,usableW*0.25,usableW*0.30];
+  doc.setFont(undefined,'bold'); let x=margin; headers.forEach((h,i)=>{doc.text(h,x+2,y); x+=colWidths[i];}); doc.setFont(undefined,'normal'); y+=14;
+  data.forEach((r,idx)=>{
+    x=margin; const cells=[String(idx+1),r.nama||'',r.status||'',r.keterangan||''];
+    const maxLines=Math.max(...cells.map((c,i)=>doc.splitTextToSize(c,colWidths[i]-4).length));
+    for(let l=0;l<maxLines;l++){
+      x=margin;
+      cells.forEach((c,i)=>{doc.text(doc.splitTextToSize(c,colWidths[i]-4)[l]||'',x+2,y); x+=colWidths[i];});
+      y+=lh;
+      if(y>doc.internal.pageSize.getHeight()-margin-10){doc.addPage(); y=margin;}
     }
+  });
+  doc.save('Data-OMK.pdf');
+}
 
-    function doLogout() {
-        document.getElementById("statusBox").style.display = "none";
-        document.getElementById("welcome").style.display = "block";
-        document.getElementById("dataBox").style.display = "none";
-    }
+// ===== CLEAR ALL =====
+clearAllBtn.onclick=()=>{if(confirm('Hapus semua anggota?')) data.forEach(d=>remove(ref(db,'omk/'+d.key)));};
+
+// ===== LOGOUT =====
+logoutBtn.onclick=()=>{
+  localStorage.removeItem('login_user'); localStorage.removeItem('login_status');
+  window.location.href='index.html';
+}
+
 </script>
-
 </body>
 </html>
